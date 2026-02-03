@@ -26,8 +26,12 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+
 # Configuration
-API_BASE_URL = "http://localhost:8000/api"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
 
 # =============================================================================
@@ -637,6 +641,20 @@ class RegisterDialog(QDialog):
         self.setup_ui()
         # Enable dark title bar on Windows
         self._enable_dark_titlebar()
+
+    def _enable_dark_titlebar(self):
+        """Enable dark title bar on Windows 10/11."""
+        try:
+            if sys.platform == 'win32':
+                # Windows 10/11 dark mode for title bar
+                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                hwnd = int(self.winId())
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 
+                    ctypes.byref(ctypes.c_int(1)), ctypes.sizeof(ctypes.c_int)
+                )
+        except Exception:
+            pass  # Silently fail if not on Windows or API unavailable
     
     def setup_ui(self):
         self.setWindowTitle("Create Account")
@@ -1020,13 +1038,15 @@ class HistoryTab(QWidget):
         layout.setContentsMargins(16, 20, 16, 16)
         layout.setSpacing(16)
         
-        # Header
-        header_layout = QHBoxLayout()
+        # Header container (so we can hide it)
+        self.header_container = QWidget()
+        header_layout = QHBoxLayout(self.header_container)
+        header_layout.setContentsMargins(0, 0, 0, 0)
         header_label = QLabel("Upload History (Last 5 Batches)")
         header_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ffffff;")
         header_layout.addWidget(header_label)
         header_layout.addStretch()
-        layout.addLayout(header_layout)
+        layout.addWidget(self.header_container)
         
         # Table
         self.table = QTableWidget()
@@ -1048,14 +1068,39 @@ class HistoryTab(QWidget):
         
         layout.addWidget(self.table)
         
+        # Empty state
+        self.empty_label = QLabel("No upload history found.")
+        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px; 
+                color: #64748b; 
+                padding: 40px;
+                background: rgba(255, 255, 255, 0.02);
+                border-radius: 12px;
+                border: 2px dashed rgba(255, 255, 255, 0.05);
+            }
+        """)
+        self.empty_label.hide()
+        layout.addWidget(self.empty_label)
+        
     def refresh_history(self):
         success, history_data = self.api_client.get_history()
         
         if not success:
             return
-            
-        self.table.setRowCount(len(history_data))
         
+        if not history_data:
+            self.table.hide()
+            self.header_container.hide()  # Hide header when empty
+            self.empty_label.show()
+            return
+            
+        self.table.show()
+        self.header_container.show()
+        self.empty_label.hide()
+            
+        self.table.setRowCount(len(history_data))        
         for row, item in enumerate(history_data):
             # Batch ID
             id_item = QTableWidgetItem(f"#{item['id']}")
@@ -1101,6 +1146,10 @@ class MainWindow(QMainWindow):
         self.refresh_data()
         # Enable dark title bar on Windows
         self._enable_dark_titlebar()
+
+    def closeEvent(self, event):
+        """Force application exit when main window is closed."""
+        QApplication.quit()
     
     def setup_ui(self):
         self.setWindowTitle("Chemical Equipment Parameter Visualizer")
@@ -1132,6 +1181,22 @@ class MainWindow(QMainWindow):
         data_layout.setContentsMargins(16, 20, 16, 16)
         self.table = self.create_data_table()
         data_layout.addWidget(self.table)
+        
+        # Empty state label for data
+        self.data_empty_label = QLabel("No equipment data available.\nUpload a CSV file to get started.")
+        self.data_empty_label.setAlignment(Qt.AlignCenter)
+        self.data_empty_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: #64748b;
+                padding: 40px;
+                background: rgba(255, 255, 255, 0.02);
+                border-radius: 12px;
+                border: 2px dashed rgba(255, 255, 255, 0.05);
+            }
+        """)
+        self.data_empty_label.hide()
+        data_layout.addWidget(self.data_empty_label)
         self.tabs.addTab(data_tab, "📊  Data Table")
         
         # History tab
@@ -1306,6 +1371,14 @@ class MainWindow(QMainWindow):
         self.history_tab.refresh_history()
     
     def update_table(self):
+        if not self.equipment_data:
+            self.table.hide()
+            self.data_empty_label.show()
+            return
+            
+        self.table.show()
+        self.data_empty_label.hide()
+        
         self.table.setRowCount(len(self.equipment_data))
         
         # Type colors for badges
@@ -1429,7 +1502,7 @@ def main():
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     
     app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)  # Prevent app from closing when switching windows
+    # app.setQuitOnLastWindowClosed(False)  # Removed to ensure app quits on close
     
     # Set global font
     font = QFont("Segoe UI", 10)

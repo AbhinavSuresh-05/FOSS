@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../services/api';
+import { register } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import './Register.css';
 
 const Register = () => {
@@ -9,6 +10,7 @@ const Register = () => {
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -17,8 +19,14 @@ const Register = () => {
         setIsLoading(true);
 
         try {
-            await api.register(username, password, passwordConfirm);
-            navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+            await register(username, password, passwordConfirm);
+            // Auto-login after successful registration
+            const result = await login(username, password);
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                navigate('/login', { state: { message: 'Registration successful! Please login manually.' } });
+            }
         } catch (err) {
             // Handle API errors
             if (err.response?.data) {
