@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
-const History = () => {
+const History = ({ refreshTrigger = 0 }) => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchHistory();
-    }, []);
+    }, [refreshTrigger]);
 
     const fetchHistory = async () => {
         try {

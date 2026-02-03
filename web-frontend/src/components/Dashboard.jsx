@@ -16,6 +16,8 @@ const Dashboard = () => {
     const [showUpload, setShowUpload] = useState(false);
     const [downloadingPDF, setDownloadingPDF] = useState(false);
 
+    const [refreshHistory, setRefreshHistory] = useState(0);
+
     const fetchStats = async () => {
         try {
             setLoading(true);
@@ -42,6 +44,7 @@ const Dashboard = () => {
     const handleUploadSuccess = () => {
         setShowUpload(false);
         fetchStats();
+        setRefreshHistory(prev => prev + 1);
     };
 
     const handleDownloadPDF = async () => {
@@ -273,7 +276,7 @@ const Dashboard = () => {
                 </section>
 
                 {/* History Section */}
-                <History />
+                <History refreshTrigger={refreshHistory} />
             </main>
 
         </div >
