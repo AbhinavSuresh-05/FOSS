@@ -7,6 +7,7 @@ import sys
 import os
 import requests
 from io import BytesIO
+import ctypes
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -380,7 +381,13 @@ class LoginDialog(QDialog):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(__file__), 'app-icon.png')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         self.setup_ui()
+        # Enable dark title bar on Windows
+        self._enable_dark_titlebar()
     
     def setup_ui(self):
         self.setWindowTitle("Chemical Equipment Visualizer")
@@ -542,6 +549,20 @@ class LoginDialog(QDialog):
         self.username_input.returnPressed.connect(self.handle_login)
         self.password_input.returnPressed.connect(self.handle_login)
     
+    def _enable_dark_titlebar(self):
+        """Enable dark title bar on Windows 10/11."""
+        try:
+            if sys.platform == 'win32':
+                # Windows 10/11 dark mode for title bar
+                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                hwnd = int(self.winId())
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 
+                    ctypes.byref(ctypes.c_int(1)), ctypes.sizeof(ctypes.c_int)
+                )
+        except Exception:
+            pass  # Silently fail if not on Windows or API unavailable
+    
     def open_register(self):
         """Open registration dialog and auto-login on success."""
         # Show RegisterDialog as modal on top of LoginDialog (don't hide this dialog)
@@ -591,7 +612,13 @@ class RegisterDialog(QDialog):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(__file__), 'app-icon.png')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         self.setup_ui()
+        # Enable dark title bar on Windows
+        self._enable_dark_titlebar()
     
     def setup_ui(self):
         self.setWindowTitle("Create Account")
@@ -970,8 +997,14 @@ class MainWindow(QMainWindow):
         self.api_client = api_client
         self.equipment_data = []
         self.type_distribution = {}
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(__file__), 'app-icon.png')
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         self.setup_ui()
         self.refresh_data()
+        # Enable dark title bar on Windows
+        self._enable_dark_titlebar()
     
     def setup_ui(self):
         self.setWindowTitle("Chemical Equipment Parameter Visualizer")
@@ -1266,6 +1299,20 @@ class MainWindow(QMainWindow):
                 f"✅ PDF report saved successfully!\n\n{file_path}")
         else:
             QMessageBox.critical(self, "Generation Failed", f"Failed to generate PDF:\n\n{result}")
+    
+    def _enable_dark_titlebar(self):
+        """Enable dark title bar on Windows 10/11."""
+        try:
+            if sys.platform == 'win32':
+                DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                hwnd = int(self.winId())
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 
+                    ctypes.byref(ctypes.c_int(1)), ctypes.sizeof(ctypes.c_int)
+                )
+        except Exception:
+            pass
+
 
 
 # =============================================================================
@@ -1302,6 +1349,20 @@ def main():
     palette.setColor(QPalette.Highlight, QColor(99, 102, 241))
     palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
     app.setPalette(palette)
+    
+    # Set application icon (for taskbar)
+    icon_path = os.path.join(os.path.dirname(__file__), 'desktop-frontend', 'app-icon.png')
+    if not os.path.exists(icon_path):
+        icon_path = os.path.join(os.path.dirname(__file__), 'app-icon.png')
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+    
+    # Windows-specific: Set AppUserModelID for taskbar icon grouping
+    if sys.platform == 'win32':
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('com.chemequip.visualizer')
+        except Exception:
+            pass
     
     # Create API client
     api_client = APIClient()
