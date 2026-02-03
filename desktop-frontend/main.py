@@ -343,6 +343,31 @@ class APIClient:
             return True, response.content
         except requests.exceptions.RequestException as e:
             return False, str(e)
+    
+    def register(self, username, password, password_confirm):
+        try:
+            response = requests.post(
+                f"{API_BASE_URL}/auth/register/",
+                json={
+                    'username': username,
+                    'password': password,
+                    'password_confirm': password_confirm
+                }
+            )
+            if response.status_code == 201:
+                return True, response.json()
+            else:
+                # Parse validation errors
+                errors = response.json()
+                error_messages = []
+                for field, msgs in errors.items():
+                    if isinstance(msgs, list):
+                        error_messages.extend(msgs)
+                    else:
+                        error_messages.append(str(msgs))
+                return False, ' '.join(error_messages) if error_messages else 'Registration failed'
+        except requests.exceptions.RequestException as e:
+            return False, str(e)
 
 
 # =============================================================================
@@ -390,7 +415,7 @@ class LoginDialog(QDialog):
         
         # Logo/Icon - Flask Image
         logo_container = QLabel()
-        logo_pixmap = QPixmap(os.path.join(os.path.dirname(__file__), 'flask-icon.png'))
+        logo_pixmap = QPixmap(os.path.join(os.path.dirname(__file__), 'app-icon.png'))
         if not logo_pixmap.isNull():
             scaled_pixmap = logo_pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             logo_container.setPixmap(scaled_pixmap)
@@ -481,6 +506,33 @@ class LoginDialog(QDialog):
         hint.setAlignment(Qt.AlignCenter)
         form_layout.addWidget(hint)
         
+        form_layout.addSpacing(16)
+        
+        # Sign up link
+        signup_label = QLabel("Don't have an account?")
+        signup_label.setStyleSheet("font-size: 13px; color: #64748b;")
+        signup_label.setAlignment(Qt.AlignCenter)
+        form_layout.addWidget(signup_label)
+        
+        self.signup_button = QPushButton("Create Account")
+        self.signup_button.setCursor(Qt.PointingHandCursor)
+        self.signup_button.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #10b981;
+                font-size: 14px;
+                font-weight: 600;
+                border: none;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                color: #34d399;
+                text-decoration: underline;
+            }
+        """)
+        self.signup_button.clicked.connect(self.open_register)
+        form_layout.addWidget(self.signup_button)
+        
         # Center the form wrapper horizontally
         center_layout = QHBoxLayout()
         center_layout.addStretch()
@@ -497,6 +549,23 @@ class LoginDialog(QDialog):
         # Enter key triggers login
         self.username_input.returnPressed.connect(self.handle_login)
         self.password_input.returnPressed.connect(self.handle_login)
+    
+    def open_register(self):
+        """Open registration dialog and auto-login on success."""
+        self.hide()
+        register_dialog = RegisterDialog(self.api_client, self)
+        if register_dialog.exec_() == QDialog.Accepted:
+            # Auto-login with the newly created credentials
+            username = register_dialog.registered_username
+            password = register_dialog.registered_password
+            success, result = self.api_client.login(username, password)
+            if success:
+                self.accept()  # Close login dialog and proceed to main app
+                return
+            else:
+                QMessageBox.warning(self, "Auto-Login Failed", 
+                    "Account created but auto-login failed. Please login manually.")
+        self.show()
     
     def handle_login(self):
         username = self.username_input.text().strip()
@@ -519,6 +588,202 @@ class LoginDialog(QDialog):
                 f"Could not sign in.\n\nPlease check your credentials and ensure the backend server is running.")
             self.login_button.setEnabled(True)
             self.login_button.setText("Sign In  →")
+
+
+# =============================================================================
+# REGISTER DIALOG
+# =============================================================================
+
+class RegisterDialog(QDialog):
+    """Registration dialog with password validation."""
+    
+    def __init__(self, api_client, parent=None):
+        super().__init__(parent)
+        self.api_client = api_client
+        self.setup_ui()
+    
+    def setup_ui(self):
+        self.setWindowTitle("Create Account")
+        self.setMinimumSize(480, 600)
+        self.resize(600, 700)
+        
+        # Main layout
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background: transparent;")
+        
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(40, 40, 40, 40)
+        
+        container_layout.addStretch(1)
+        
+        # Form wrapper
+        form_wrapper = QWidget()
+        form_wrapper.setMaximumWidth(420)
+        form_wrapper.setMinimumWidth(320)
+        form_layout = QVBoxLayout(form_wrapper)
+        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setSpacing(0)
+        
+        # Logo with flask icon (no background box)
+        logo_container = QLabel()
+        logo_container.setFixedSize(100, 100)
+        logo_container.setAlignment(Qt.AlignCenter)
+        
+        # Load flask icon
+        icon_path = os.path.join(os.path.dirname(__file__), 'app-icon.png')
+        if os.path.exists(icon_path):
+            pixmap = QPixmap(icon_path)
+            scaled_pixmap = pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_container.setPixmap(scaled_pixmap)
+        
+        logo_h_layout = QHBoxLayout()
+        logo_h_layout.addStretch()
+        logo_h_layout.addWidget(logo_container)
+        logo_h_layout.addStretch()
+        form_layout.addLayout(logo_h_layout)
+        
+        form_layout.addSpacing(24)
+        
+        # Title
+        title = QLabel("Create Account")
+        title.setStyleSheet("""
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+        """)
+        title.setAlignment(Qt.AlignCenter)
+        form_layout.addWidget(title)
+        
+        subtitle = QLabel("Join Chemical Equipment Visualizer")
+        subtitle.setStyleSheet("font-size: 14px; color: #94a3b8; margin-top: 4px;")
+        subtitle.setAlignment(Qt.AlignCenter)
+        form_layout.addWidget(subtitle)
+        
+        form_layout.addSpacing(32)
+        
+        # Username
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("👤  Username (min 3 chars)")
+        self.username_input.setMinimumHeight(52)
+        form_layout.addWidget(self.username_input)
+        
+        form_layout.addSpacing(14)
+        
+        # Password
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("🔒  Password (8+ chars, letters, numbers, special)")
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self.password_input.setMinimumHeight(52)
+        form_layout.addWidget(self.password_input)
+        
+        form_layout.addSpacing(14)
+        
+        # Confirm Password
+        self.confirm_input = QLineEdit()
+        self.confirm_input.setPlaceholderText("🔐  Confirm Password")
+        self.confirm_input.setEchoMode(QLineEdit.Password)
+        self.confirm_input.setMinimumHeight(52)
+        form_layout.addWidget(self.confirm_input)
+        
+        form_layout.addSpacing(24)
+        
+        # Register button (green theme)
+        self.register_button = QPushButton("Create Account  →")
+        self.register_button.setMinimumHeight(52)
+        self.register_button.setCursor(Qt.PointingHandCursor)
+        self.register_button.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #10b981, stop:1 #059669);
+                font-size: 15px;
+                font-weight: 700;
+                border-radius: 12px;
+                color: #ffffff;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #34d399, stop:1 #10b981);
+            }
+        """)
+        self.register_button.clicked.connect(self.handle_register)
+        form_layout.addWidget(self.register_button)
+        
+        form_layout.addSpacing(20)
+        
+        # Back to login
+        back_label = QLabel("Already have an account?")
+        back_label.setStyleSheet("font-size: 13px; color: #64748b;")
+        back_label.setAlignment(Qt.AlignCenter)
+        form_layout.addWidget(back_label)
+        
+        back_button = QPushButton("Back to Login")
+        back_button.setCursor(Qt.PointingHandCursor)
+        back_button.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #6366f1;
+                font-size: 14px;
+                font-weight: 600;
+                border: none;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                color: #818cf8;
+            }
+        """)
+        back_button.clicked.connect(self.reject)
+        form_layout.addWidget(back_button)
+        
+        # Center form
+        center_layout = QHBoxLayout()
+        center_layout.addStretch()
+        center_layout.addWidget(form_wrapper)
+        center_layout.addStretch()
+        container_layout.addLayout(center_layout)
+        
+        container_layout.addStretch(2)
+        
+        scroll.setWidget(container)
+        outer_layout.addWidget(scroll)
+    
+    def handle_register(self):
+        username = self.username_input.text().strip()
+        password = self.password_input.text().strip()
+        confirm = self.confirm_input.text().strip()
+        
+        if not username or not password or not confirm:
+            QMessageBox.warning(self, "Validation Error", "Please fill in all fields")
+            return
+        
+        if len(username) < 3:
+            QMessageBox.warning(self, "Validation Error", "Username must be at least 3 characters")
+            return
+        
+        if password != confirm:
+            QMessageBox.warning(self, "Validation Error", "Passwords do not match")
+            return
+        
+        self.register_button.setEnabled(False)
+        self.register_button.setText("Creating account...")
+        QApplication.processEvents()
+        
+        success, result = self.api_client.register(username, password, confirm)
+        
+        if success:
+            # Store credentials for auto-login
+            self.registered_username = username
+            self.registered_password = password
+            self.accept()
+        else:
+            QMessageBox.critical(self, "Registration Failed", f"{result}")
+            self.register_button.setEnabled(True)
+            self.register_button.setText("Create Account  →")
 
 
 # =============================================================================
@@ -1022,6 +1287,11 @@ def main():
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)  # Prevent app from closing when switching windows
+    
+    # Set global font
+    font = QFont("Segoe UI", 10)
+    app.setFont(font)
     app.setStyle('Fusion')
     
     # Apply global stylesheet

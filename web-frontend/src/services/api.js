@@ -33,11 +33,21 @@ export const logout = () => {
   localStorage.removeItem('username');
 };
 
+// Registration
+export const register = async (username, password, password_confirm) => {
+  const response = await axios.post(`${API_BASE_URL}/auth/register/`, {
+    username,
+    password,
+    password_confirm,
+  });
+  return response.data;
+};
+
 // Equipment API
 export const uploadCSV = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   const response = await api.post('/upload/', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
