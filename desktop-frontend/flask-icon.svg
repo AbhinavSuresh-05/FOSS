@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Flask outline -->
+  <defs>
+    <linearGradient id="liquidGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Flask body -->
+  <path d="M 200 80 L 200 180 L 120 380 C 110 400 120 420 140 420 L 372 420 C 392 420 402 400 392 380 L 312 180 L 312 80 Z" 
+        fill="url(#liquidGradient)" opacity="0.3"/>
+  
+  <!-- Liquid with gradient -->
+  <path d="M 205 240 L 140 400 C 135 410 140 415 150 415 L 362 415 C 372 415 377 410 372 400 L 307 240 Z" 
+        fill="url(#liquidGradient)" filter="url(#glow)"/>
+  
+  <!-- Bubbles -->
+  <circle cx="240" cy="350" r="12" fill="white" opacity="0.4"/>
+  <circle cx="280" cy="320" r="8" fill="white" opacity="0.5"/>
+  <circle cx="220" cy="380" r="6" fill="white" opacity="0.6"/>
+  <circle cx="290" cy="370" r="10" fill="white" opacity="0.3"/>
+  <circle cx="260" cy="290" r="7" fill="white" opacity="0.5"/>
+  
+  <!-- Flask outline (white stroke) -->
+  <path d="M 200 80 L 200 180 L 120 380 C 110 400 120 420 140 420 L 372 420 C 392 420 402 400 392 380 L 312 180 L 312 80" 
+        stroke="white" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Flask neck -->
+  <rect x="220" y="40" width="72" height="50" rx="8" fill="none" stroke="white" stroke-width="8"/>
+  
+  <!-- Measurement lines -->
+  <line x1="150" y1="360" x2="170" y2="360" stroke="white" stroke-width="3" opacity="0.6"/>
+  <line x1="150" y1="320" x2="170" y2="320" stroke="white" stroke-width="3" opacity="0.6"/>
+  <line x1="150" y1="280" x2="170" y2="280" stroke="white" stroke-width="3" opacity="0.6"/>
+</svg>

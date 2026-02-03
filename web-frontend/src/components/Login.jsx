@@ -37,7 +37,7 @@ const Login = () => {
             <div className="login-card">
                 <div className="login-header">
                     <div className="logo-container">
-                        <img src="/flask-icon.png" alt="Chemistry Flask" className="logo-icon" />
+                        <img src="/Flask-icon.png" alt="Chemistry Flask" className="logo-icon" />
                     </div>
                     <h1>Chemical Equipment</h1>
                     <p>Parameter Visualizer</p>
