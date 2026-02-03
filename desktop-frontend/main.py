@@ -552,7 +552,8 @@ class LoginDialog(QDialog):
     
     def open_register(self):
         """Open registration dialog and auto-login on success."""
-        self.hide()
+        # Show RegisterDialog as modal on top of LoginDialog (don't hide this dialog)
+        # This prevents app termination when user clicks Back to Login
         register_dialog = RegisterDialog(self.api_client, self)
         if register_dialog.exec_() == QDialog.Accepted:
             # Auto-login with the newly created credentials
@@ -561,11 +562,9 @@ class LoginDialog(QDialog):
             success, result = self.api_client.login(username, password)
             if success:
                 self.accept()  # Close login dialog and proceed to main app
-                return
             else:
                 QMessageBox.warning(self, "Auto-Login Failed", 
                     "Account created but auto-login failed. Please login manually.")
-        self.show()
     
     def handle_login(self):
         username = self.username_input.text().strip()
