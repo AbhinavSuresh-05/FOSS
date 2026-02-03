@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QLabel, QPushButton, QTableWidget, QTableWidgetItem, QTabWidget,
     QFileDialog, QMessageBox, QDialog, QLineEdit, QFormLayout,
     QDialogButtonBox, QFrame, QSpacerItem, QSizePolicy, QHeaderView,
-    QProgressDialog, QGraphicsDropShadowEffect
+    QProgressDialog, QGraphicsDropShadowEffect, QScrollArea, QSplitter
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSize
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPixmap
@@ -48,6 +48,7 @@ QMainWindow, QDialog, QWidget {
 
 QLabel {
     color: #e2e8f0;
+    background: transparent;
 }
 
 /* ============================================
@@ -173,7 +174,7 @@ QTabBar::tab:hover:!selected {
 }
 
 /* ============================================
-   TABLE WIDGET
+   TABLE WIDGET - Fixed Alignment
    ============================================ */
 
 QTableWidget {
@@ -186,7 +187,7 @@ QTableWidget {
 }
 
 QTableWidget::item {
-    padding: 16px 12px;
+    padding: 12px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -198,38 +199,34 @@ QTableWidget::item:alternate {
     background-color: rgba(255, 255, 255, 0.02);
 }
 
+QHeaderView {
+    background-color: transparent;
+}
+
 QHeaderView::section {
-    background-color: rgba(15, 23, 42, 0.9);
+    background-color: #0f172a;
     color: #94a3b8;
-    padding: 18px 12px;
+    padding: 14px 16px;
     border: none;
     border-bottom: 2px solid #6366f1;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-QHeaderView::section:first {
-    border-top-left-radius: 8px;
-}
-
-QHeaderView::section:last {
-    border-top-right-radius: 8px;
 }
 
 /* Scrollbar Styling */
 QScrollBar:vertical {
     background-color: rgba(255, 255, 255, 0.03);
-    width: 12px;
+    width: 10px;
     margin: 0;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:vertical {
     background-color: rgba(139, 92, 246, 0.4);
     min-height: 30px;
-    border-radius: 6px;
+    border-radius: 5px;
     margin: 2px;
 }
 
@@ -243,15 +240,15 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 QScrollBar:horizontal {
     background-color: rgba(255, 255, 255, 0.03);
-    height: 12px;
+    height: 10px;
     margin: 0;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:horizontal {
     background-color: rgba(139, 92, 246, 0.4);
     min-width: 30px;
-    border-radius: 6px;
+    border-radius: 5px;
     margin: 2px;
 }
 
@@ -349,11 +346,11 @@ class APIClient:
 
 
 # =============================================================================
-# LOGIN DIALOG - Modern & Professional
+# LOGIN DIALOG - Responsive with Max Width
 # =============================================================================
 
 class LoginDialog(QDialog):
-    """Modern authentication dialog with glassmorphism styling."""
+    """Modern authentication dialog with responsive centered form."""
     
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
@@ -363,20 +360,35 @@ class LoginDialog(QDialog):
     def setup_ui(self):
         self.setWindowTitle("Chemical Equipment Visualizer")
         self.setMinimumSize(480, 520)
-        self.resize(480, 520)
+        self.resize(600, 600)
         
-        # Remove default window frame styling for cleaner look
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinMaxButtonsHint)
+        # Main layout that fills the dialog
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Main layout with generous padding
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(50, 50, 50, 50)
-        layout.setSpacing(0)
+        # Create a scrollable container for responsiveness
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background: transparent;")
+        
+        # Container widget
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(40, 40, 40, 40)
         
         # Spacer at top
-        layout.addStretch(1)
+        container_layout.addStretch(1)
         
-        # Logo/Icon placeholder
+        # Create a centered form wrapper with MAX WIDTH
+        form_wrapper = QWidget()
+        form_wrapper.setMaximumWidth(420)  # Constrain form width
+        form_wrapper.setMinimumWidth(320)
+        form_layout = QVBoxLayout(form_wrapper)
+        form_layout.setContentsMargins(0, 0, 0, 0)
+        form_layout.setSpacing(0)
+        
+        # Logo/Icon
         logo_container = QLabel()
         logo_container.setFixedSize(80, 80)
         logo_container.setStyleSheet("""
@@ -386,13 +398,13 @@ class LoginDialog(QDialog):
         """)
         logo_container.setAlignment(Qt.AlignCenter)
         
-        logo_layout = QHBoxLayout()
-        logo_layout.addStretch()
-        logo_layout.addWidget(logo_container)
-        logo_layout.addStretch()
-        layout.addLayout(logo_layout)
+        logo_h_layout = QHBoxLayout()
+        logo_h_layout.addStretch()
+        logo_h_layout.addWidget(logo_container)
+        logo_h_layout.addStretch()
+        form_layout.addLayout(logo_h_layout)
         
-        layout.addSpacing(30)
+        form_layout.addSpacing(30)
         
         # Title
         title = QLabel("Chemical Equipment")
@@ -403,7 +415,7 @@ class LoginDialog(QDialog):
             letter-spacing: -0.5px;
         """)
         title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        form_layout.addWidget(title)
         
         # Subtitle
         subtitle = QLabel("Parameter Visualizer")
@@ -413,26 +425,26 @@ class LoginDialog(QDialog):
             margin-top: 4px;
         """)
         subtitle.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle)
+        form_layout.addWidget(subtitle)
         
-        layout.addSpacing(40)
+        form_layout.addSpacing(40)
         
         # Username field
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("👤  Username")
         self.username_input.setMinimumHeight(56)
-        layout.addWidget(self.username_input)
+        form_layout.addWidget(self.username_input)
         
-        layout.addSpacing(16)
+        form_layout.addSpacing(16)
         
         # Password field
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("🔒  Password")
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setMinimumHeight(56)
-        layout.addWidget(self.password_input)
+        form_layout.addWidget(self.password_input)
         
-        layout.addSpacing(28)
+        form_layout.addSpacing(28)
         
         # Login button
         self.login_button = QPushButton("Sign In  →")
@@ -456,9 +468,9 @@ class LoginDialog(QDialog):
             }
         """)
         self.login_button.clicked.connect(self.handle_login)
-        layout.addWidget(self.login_button)
+        form_layout.addWidget(self.login_button)
         
-        layout.addSpacing(24)
+        form_layout.addSpacing(24)
         
         # Hint
         hint = QLabel("Default credentials:  admin / admin123")
@@ -467,10 +479,20 @@ class LoginDialog(QDialog):
             color: #64748b;
         """)
         hint.setAlignment(Qt.AlignCenter)
-        layout.addWidget(hint)
+        form_layout.addWidget(hint)
+        
+        # Center the form wrapper horizontally
+        center_layout = QHBoxLayout()
+        center_layout.addStretch()
+        center_layout.addWidget(form_wrapper)
+        center_layout.addStretch()
+        container_layout.addLayout(center_layout)
         
         # Spacer at bottom
-        layout.addStretch(2)
+        container_layout.addStretch(2)
+        
+        scroll.setWidget(container)
+        outer_layout.addWidget(scroll)
         
         # Enter key triggers login
         self.username_input.returnPressed.connect(self.handle_login)
@@ -500,14 +522,14 @@ class LoginDialog(QDialog):
 
 
 # =============================================================================
-# MATPLOTLIB CHART CANVAS
+# MATPLOTLIB CHARTS - Bar + Scatter
 # =============================================================================
 
-class ChartCanvas(FigureCanvas):
-    """Matplotlib canvas with dark theme styling."""
+class BarChartCanvas(FigureCanvas):
+    """Bar chart canvas for type distribution."""
     
-    def __init__(self, parent=None, width=10, height=6):
-        self.fig = Figure(figsize=(width, height), dpi=100, facecolor='#1e1b4b')
+    def __init__(self, parent=None):
+        self.fig = Figure(figsize=(8, 5), dpi=100, facecolor='#1e1b4b')
         self.axes = self.fig.add_subplot(111)
         super().__init__(self.fig)
         self.setParent(parent)
@@ -516,7 +538,7 @@ class ChartCanvas(FigureCanvas):
     
     def setup_style(self):
         self.axes.set_facecolor('#0f172a')
-        self.axes.tick_params(colors='#94a3b8', labelsize=11)
+        self.axes.tick_params(colors='#94a3b8', labelsize=10)
         self.axes.spines['bottom'].set_color('#334155')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['left'].set_color('#334155')
@@ -525,13 +547,13 @@ class ChartCanvas(FigureCanvas):
         self.axes.yaxis.label.set_color('#e2e8f0')
         self.axes.title.set_color('#ffffff')
     
-    def plot_bar_chart(self, type_distribution):
+    def plot(self, type_distribution):
         self.axes.clear()
         self.setup_style()
         
         if not type_distribution:
-            self.axes.text(0.5, 0.5, 'No data available\n\nUpload a CSV file to see visualizations', 
-                          ha='center', va='center', color='#64748b', fontsize=16,
+            self.axes.text(0.5, 0.5, 'No data available', 
+                          ha='center', va='center', color='#64748b', fontsize=14,
                           transform=self.axes.transAxes)
             self.axes.set_xticks([])
             self.axes.set_yticks([])
@@ -540,42 +562,96 @@ class ChartCanvas(FigureCanvas):
         
         types = list(type_distribution.keys())
         counts = list(type_distribution.values())
-        colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f97316', '#ec4899', '#eab308']
+        colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f97316', '#ec4899', '#eab308', '#06b6d4', '#f43f5e']
         
         x_pos = range(len(types))
         bars = self.axes.bar(x_pos, counts, color=colors[:len(types)], 
-                            edgecolor='none', width=0.65)
+                            edgecolor='none', width=0.6)
         
         self.axes.set_xticks(x_pos)
-        self.axes.set_xticklabels(types, fontsize=12)
-        self.axes.set_ylabel('Count', fontsize=13, fontweight='500')
-        self.axes.set_title('Equipment Type Distribution', fontsize=18, fontweight='700', 
-                           pad=25, color='#ffffff')
+        self.axes.set_xticklabels(types, fontsize=9, rotation=15, ha='right')
+        self.axes.set_ylabel('Count', fontsize=11, fontweight='500')
+        self.axes.set_title('Equipment Type Distribution', fontsize=15, fontweight='700', 
+                           pad=15, color='#ffffff')
         
         # Add value labels on bars
         for bar, count in zip(bars, counts):
             height = bar.get_height()
             self.axes.annotate(f'{count}',
                               xy=(bar.get_x() + bar.get_width() / 2, height),
-                              xytext=(0, 8),
+                              xytext=(0, 5),
                               textcoords="offset points",
                               ha='center', va='bottom', 
-                              color='#ffffff', fontsize=14, fontweight='600')
+                              color='#ffffff', fontsize=12, fontweight='600')
         
-        # Add subtle grid
-        self.axes.yaxis.grid(True, linestyle='--', alpha=0.2, color='#475569')
+        self.axes.yaxis.grid(True, linestyle='--', alpha=0.15, color='#475569')
         self.axes.set_axisbelow(True)
         
-        self.fig.tight_layout(pad=2.0)
+        self.fig.tight_layout(pad=1.5)
+        self.draw()
+
+
+class ScatterChartCanvas(FigureCanvas):
+    """Scatter chart canvas for Temperature vs Pressure."""
+    
+    def __init__(self, parent=None):
+        self.fig = Figure(figsize=(8, 5), dpi=100, facecolor='#1e1b4b')
+        self.axes = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+        self.setParent(parent)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setup_style()
+    
+    def setup_style(self):
+        self.axes.set_facecolor('#0f172a')
+        self.axes.tick_params(colors='#94a3b8', labelsize=10)
+        self.axes.spines['bottom'].set_color('#334155')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['left'].set_color('#334155')
+        self.axes.spines['right'].set_visible(False)
+        self.axes.xaxis.label.set_color('#e2e8f0')
+        self.axes.yaxis.label.set_color('#e2e8f0')
+        self.axes.title.set_color('#ffffff')
+    
+    def plot(self, equipment_data):
+        self.axes.clear()
+        self.setup_style()
+        
+        if not equipment_data:
+            self.axes.text(0.5, 0.5, 'No data available', 
+                          ha='center', va='center', color='#64748b', fontsize=14,
+                          transform=self.axes.transAxes)
+            self.axes.set_xticks([])
+            self.axes.set_yticks([])
+            self.draw()
+            return
+        
+        temps = [item['temperature'] for item in equipment_data]
+        pressures = [item['pressure'] for item in equipment_data]
+        
+        scatter = self.axes.scatter(temps, pressures, 
+                                   c='#6366f1', s=120, alpha=0.8,
+                                   edgecolors='#a5b4fc', linewidths=2)
+        
+        self.axes.set_xlabel('Temperature (°C)', fontsize=11, fontweight='500')
+        self.axes.set_ylabel('Pressure (bar)', fontsize=11, fontweight='500')
+        self.axes.set_title('Temperature vs Pressure', fontsize=15, fontweight='700', 
+                           pad=15, color='#ffffff')
+        
+        self.axes.xaxis.grid(True, linestyle='--', alpha=0.15, color='#475569')
+        self.axes.yaxis.grid(True, linestyle='--', alpha=0.15, color='#475569')
+        self.axes.set_axisbelow(True)
+        
+        self.fig.tight_layout(pad=1.5)
         self.draw()
 
 
 # =============================================================================
-# STAT CARD WIDGET
+# STAT CARD WIDGET - Clean without dark box behind emoji
 # =============================================================================
 
 class StatCard(QFrame):
-    """A beautiful stat card widget."""
+    """A clean stat card widget without background on emoji."""
     
     def __init__(self, title, value, color, icon_emoji="📊", parent=None):
         super().__init__(parent)
@@ -584,45 +660,41 @@ class StatCard(QFrame):
         self.setup_ui(title, value, icon_emoji)
     
     def setup_ui(self, title, value, icon_emoji):
-        self.setMinimumHeight(120)
+        self.setMinimumHeight(110)
         self.setCursor(Qt.PointingHandCursor)
         
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(8)
+        layout.setContentsMargins(20, 18, 20, 18)
+        layout.setSpacing(6)
         
-        # Icon and title row
-        header = QHBoxLayout()
-        
+        # Icon (without background box - just the emoji)
         icon_label = QLabel(icon_emoji)
         icon_label.setStyleSheet(f"""
-            font-size: 24px;
-            background-color: {self.color}20;
-            padding: 8px;
-            border-radius: 10px;
+            font-size: 28px;
+            background: transparent;
         """)
-        header.addWidget(icon_label)
-        header.addStretch()
-        layout.addLayout(header)
+        layout.addWidget(icon_label)
         
         layout.addStretch()
         
         # Title
         title_label = QLabel(title)
         title_label.setStyleSheet("""
-            font-size: 13px;
+            font-size: 12px;
             color: #94a3b8;
             font-weight: 500;
+            background: transparent;
         """)
         layout.addWidget(title_label)
         
         # Value
         self.value_label = QLabel(str(value))
         self.value_label.setStyleSheet(f"""
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             color: {self.color};
             letter-spacing: -1px;
+            background: transparent;
         """)
         layout.addWidget(self.value_label)
     
@@ -672,17 +744,47 @@ class MainWindow(QMainWindow):
         # Data tab
         data_tab = QWidget()
         data_layout = QVBoxLayout(data_tab)
-        data_layout.setContentsMargins(20, 24, 20, 20)
+        data_layout.setContentsMargins(16, 20, 16, 16)
         self.table = self.create_data_table()
         data_layout.addWidget(self.table)
         self.tabs.addTab(data_tab, "📊  Data Table")
         
-        # Visuals tab
+        # Visuals tab - Now with TWO charts
         visuals_tab = QWidget()
-        visuals_layout = QVBoxLayout(visuals_tab)
-        visuals_layout.setContentsMargins(20, 24, 20, 20)
-        self.chart_canvas = ChartCanvas(visuals_tab)
-        visuals_layout.addWidget(self.chart_canvas)
+        visuals_layout = QHBoxLayout(visuals_tab)
+        visuals_layout.setContentsMargins(16, 20, 16, 16)
+        visuals_layout.setSpacing(20)
+        
+        # Bar chart on left
+        bar_container = QFrame()
+        bar_container.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.02);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+            }
+        """)
+        bar_layout = QVBoxLayout(bar_container)
+        bar_layout.setContentsMargins(12, 12, 12, 12)
+        self.bar_chart = BarChartCanvas(bar_container)
+        bar_layout.addWidget(self.bar_chart)
+        visuals_layout.addWidget(bar_container)
+        
+        # Scatter chart on right
+        scatter_container = QFrame()
+        scatter_container.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.02);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+            }
+        """)
+        scatter_layout = QVBoxLayout(scatter_container)
+        scatter_layout.setContentsMargins(12, 12, 12, 12)
+        self.scatter_chart = ScatterChartCanvas(scatter_container)
+        scatter_layout.addWidget(self.scatter_chart)
+        visuals_layout.addWidget(scatter_container)
+        
         self.tabs.addTab(visuals_tab, "📈  Visualizations")
     
     def create_header(self):
@@ -699,6 +801,7 @@ class MainWindow(QMainWindow):
             font-weight: 700;
             color: #ffffff;
             letter-spacing: -0.5px;
+            background: transparent;
         """)
         title_section.addWidget(title)
         
@@ -706,6 +809,7 @@ class MainWindow(QMainWindow):
         subtitle.setStyleSheet("""
             font-size: 14px;
             color: #64748b;
+            background: transparent;
         """)
         title_section.addWidget(subtitle)
         
@@ -758,7 +862,12 @@ class MainWindow(QMainWindow):
         table.setHorizontalHeaderLabels([
             "Equipment Name", "Type", "Flowrate", "Pressure", "Temperature"
         ])
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
+        # Fixed: Uniform column sizing
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Stretch)
+        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        
         table.setAlternatingRowColors(True)
         table.setShowGrid(False)
         table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -766,6 +875,9 @@ class MainWindow(QMainWindow):
         table.verticalHeader().setVisible(False)
         table.setVerticalScrollMode(QTableWidget.ScrollPerPixel)
         table.setHorizontalScrollMode(QTableWidget.ScrollPerPixel)
+        
+        # Set consistent row height
+        table.verticalHeader().setDefaultSectionSize(52)
         
         return table
     
@@ -795,9 +907,10 @@ class MainWindow(QMainWindow):
         self.equipment_data = data.get('equipment_data', [])
         self.update_table()
         
-        # Update chart
+        # Update charts (both bar and scatter)
         self.type_distribution = data.get('type_distribution', {})
-        self.chart_canvas.plot_bar_chart(self.type_distribution)
+        self.bar_chart.plot(self.type_distribution)
+        self.scatter_chart.plot(self.equipment_data)
     
     def update_table(self):
         self.table.setRowCount(len(self.equipment_data))
@@ -832,12 +945,8 @@ class MainWindow(QMainWindow):
             # Numeric values
             for col, key in [(2, 'flowrate'), (3, 'pressure'), (4, 'temperature')]:
                 value_item = QTableWidgetItem(f"{item[key]:.2f}")
-                value_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                value_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
                 self.table.setItem(row, col, value_item)
-        
-        # Set row heights
-        for row in range(self.table.rowCount()):
-            self.table.setRowHeight(row, 52)
     
     def upload_csv(self):
         file_path, _ = QFileDialog.getOpenFileName(
