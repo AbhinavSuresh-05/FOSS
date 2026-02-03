@@ -384,25 +384,18 @@ class LoginDialog(QDialog):
     
     def setup_ui(self):
         self.setWindowTitle("Chemical Equipment Visualizer")
-        self.setMinimumSize(480, 520)
-        self.resize(600, 600)
+        self.setMinimumSize(480, 600)
+        self.resize(600, 700)
         
-        # Main layout that fills the dialog
+        # Main layout
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Create a scrollable container for responsiveness
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("background: transparent;")
-        
-        # Container widget
+        # Container widget (direct, no scroll)
         container = QWidget()
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(40, 40, 40, 40)
         
-        # Spacer at top
         container_layout.addStretch(1)
         
         # Create a centered form wrapper with MAX WIDTH
@@ -543,8 +536,7 @@ class LoginDialog(QDialog):
         # Spacer at bottom
         container_layout.addStretch(2)
         
-        scroll.setWidget(container)
-        outer_layout.addWidget(scroll)
+        outer_layout.addWidget(container)
         
         # Enter key triggers login
         self.username_input.returnPressed.connect(self.handle_login)
