@@ -18,7 +18,8 @@ from .serializers import (
     EquipmentDataSerializer, 
     EquipmentBatchSerializer,
     CSVUploadSerializer,
-    DashboardStatsSerializer
+    DashboardStatsSerializer,
+    UserRegistrationSerializer
 )
 
 
@@ -86,8 +87,8 @@ class DashboardStatsView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        # Get the latest batch
-        latest_batch = EquipmentBatch.objects.first()
+        # Get the latest batch FOR THIS USER
+        latest_batch = EquipmentBatch.objects.filter(user=request.user).first()
         
         if not latest_batch:
             return Response({
@@ -146,8 +147,8 @@ class PDFReportView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        # Get the latest batch
-        latest_batch = EquipmentBatch.objects.first()
+        # Get the latest batch FOR THIS USER
+        latest_batch = EquipmentBatch.objects.filter(user=request.user).first()
         
         if not latest_batch:
             return Response(
@@ -275,7 +276,7 @@ class EquipmentListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        latest_batch = EquipmentBatch.objects.first()
+        latest_batch = EquipmentBatch.objects.filter(user=request.user).first()
         
         if not latest_batch:
             return Response({'equipment_data': []})
@@ -287,3 +288,21 @@ class EquipmentListView(APIView):
             'batch_id': latest_batch.id,
             'equipment_data': serializer.data
         })
+
+
+class RegisterView(APIView):
+    """API view for user registration (public endpoint)."""
+    permission_classes = []  # No authentication required
+    
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Registration successful! You can now login.',
+                'username': serializer.validated_data['username']
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

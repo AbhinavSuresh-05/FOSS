@@ -7,9 +7,12 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
+from core.views import RegisterView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.urls')),
     path('api/auth/token/', obtain_auth_token, name='api-token-auth'),
+    path('api/auth/register/', RegisterView.as_view(), name='api-register'),
 ]
+
