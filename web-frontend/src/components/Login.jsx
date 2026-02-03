@@ -37,10 +37,7 @@ const Login = () => {
             <div className="login-card">
                 <div className="login-header">
                     <div className="logo-container">
-                        <svg viewBox="0 0 24 24" className="logo-icon">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                                stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        <img src="/flask-icon.png" alt="Chemistry Flask" className="logo-icon" />
                     </div>
                     <h1>Chemical Equipment</h1>
                     <p>Parameter Visualizer</p>

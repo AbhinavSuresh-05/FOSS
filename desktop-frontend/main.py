@@ -388,15 +388,15 @@ class LoginDialog(QDialog):
         form_layout.setContentsMargins(0, 0, 0, 0)
         form_layout.setSpacing(0)
         
-        # Logo/Icon
+        # Logo/Icon - Flask Image
         logo_container = QLabel()
-        logo_container.setFixedSize(80, 80)
-        logo_container.setStyleSheet("""
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #6366f1, stop:1 #8b5cf6);
-            border-radius: 20px;
-        """)
+        logo_pixmap = QPixmap(os.path.join(os.path.dirname(__file__), 'flask-icon.png'))
+        if not logo_pixmap.isNull():
+            scaled_pixmap = logo_pixmap.scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_container.setPixmap(scaled_pixmap)
+        logo_container.setFixedSize(100, 100)
         logo_container.setAlignment(Qt.AlignCenter)
+        logo_container.setStyleSheet("background: transparent;")
         
         logo_h_layout = QHBoxLayout()
         logo_h_layout.addStretch()
