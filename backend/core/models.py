@@ -40,11 +40,11 @@ class EquipmentData(models.Model):
 
 @receiver(post_save, sender=EquipmentBatch)
 def enforce_batch_limit(sender, instance, created, **kwargs):
-    """Ensure only the last 5 batches are kept in the database."""
-    if created:
-        batches = EquipmentBatch.objects.all().order_by('-uploaded_at')
+    """Ensure only the last 5 batches are kept PER USER."""
+    if created and instance.user:
+        batches = EquipmentBatch.objects.filter(user=instance.user).order_by('-uploaded_at')
         if batches.count() > 5:
             # Get batches to delete (all beyond the 5 most recent)
             batches_to_delete = batches[5:]
             for batch in batches_to_delete:
-                batch.delete()  # This will cascade delete related EquipmentData
+                batch.delete()  # This will cascade delete related EquipmentDat
