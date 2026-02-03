@@ -18,6 +18,19 @@ class EquipmentBatchSerializer(serializers.ModelSerializer):
         fields = ['id', 'uploaded_at', 'filename', 'equipment_data']
 
 
+class BatchHistorySerializer(serializers.ModelSerializer):
+    """Serializer for batch history with summary stats."""
+    total_records = serializers.IntegerField(read_only=True)
+    avg_flowrate = serializers.FloatField(read_only=True)
+    avg_pressure = serializers.FloatField(read_only=True)
+    avg_temperature = serializers.FloatField(read_only=True)
+    
+    class Meta:
+        model = EquipmentBatch
+        fields = ['id', 'uploaded_at', 'filename', 'total_records', 'avg_flowrate', 'avg_pressure', 'avg_temperature']
+
+
+
 class CSVUploadSerializer(serializers.Serializer):
     """Serializer for CSV file upload."""
     file = serializers.FileField()

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getDashboardStats, downloadPDF } from '../services/api';
 import Upload from './Upload';
 import EquipmentChart from './EquipmentChart';
+import History from './History';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -270,8 +271,12 @@ const Dashboard = () => {
                         </div>
                     )}
                 </section>
+
+                {/* History Section */}
+                <History />
             </main>
-        </div>
+
+        </div >
     );
 };
 

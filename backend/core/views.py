@@ -17,6 +17,7 @@ from .models import EquipmentBatch, EquipmentData
 from .serializers import (
     EquipmentDataSerializer, 
     EquipmentBatchSerializer,
+    BatchHistorySerializer,
     CSVUploadSerializer,
     DashboardStatsSerializer,
     UserRegistrationSerializer
@@ -140,6 +141,24 @@ class DashboardStatsView(APIView):
             },
             'equipment_data': serialized_data
         })
+
+
+class HistoryView(APIView):
+    """API view to list upload history with summaries."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Get all batches for this user, ordered by most recent
+        batches = EquipmentBatch.objects.filter(user=request.user).annotate(
+            total_records=Count('equipment_data'),
+            avg_flowrate=Avg('equipment_data__flowrate'),
+            avg_pressure=Avg('equipment_data__pressure'),
+            avg_temperature=Avg('equipment_data__temperature')
+        ).order_by('-uploaded_at')
+        
+        serializer = BatchHistorySerializer(batches, many=True)
+        return Response(serializer.data)
+
 
 
 class PDFReportView(APIView):

@@ -335,7 +335,25 @@ class APIClient:
             response.raise_for_status()
             return True, response.json()
         except requests.exceptions.RequestException as e:
-            return False, str(e)
+            print(f"Stats error: {e}")
+            return False, {}
+    
+    def get_history(self):
+        """Fetch upload history."""
+        if not self.token:
+            return False, []
+        
+        try:
+            response = self.session.get(
+                f"{API_BASE_URL}/history/"
+            )
+            
+            if response.status_code == 200:
+                return True, response.json()
+            return False, []
+        except requests.exceptions.RequestException as e:
+            print(f"History error: {e}")
+            return False, []
     
     def download_pdf(self):
         try:
@@ -986,6 +1004,84 @@ class StatCard(QFrame):
 
 
 # =============================================================================
+# HISTORY TAB
+# =============================================================================
+
+class HistoryTab(QWidget):
+    """Tab to display upload history."""
+    
+    def __init__(self, api_client, parent=None):
+        super().__init__(parent)
+        self.api_client = api_client
+        self.setup_ui()
+        
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 20, 16, 16)
+        layout.setSpacing(16)
+        
+        # Header
+        header_layout = QHBoxLayout()
+        header_label = QLabel("Upload History (Last 5 Batches)")
+        header_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ffffff;")
+        header_layout.addWidget(header_label)
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
+        
+        # Table
+        self.table = QTableWidget()
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels([
+            "Batch ID", "Uploaded At", "Filename", "Records", "Avg Flow", "Avg Pressure"
+        ])
+        
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Stretch)
+        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        
+        self.table.setAlternatingRowColors(True)
+        self.table.setShowGrid(False)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(45)
+        
+        layout.addWidget(self.table)
+        
+    def refresh_history(self):
+        success, history_data = self.api_client.get_history()
+        
+        if not success:
+            return
+            
+        self.table.setRowCount(len(history_data))
+        
+        for row, item in enumerate(history_data):
+            # Batch ID
+            id_item = QTableWidgetItem(f"#{item['id']}")
+            id_item.setForeground(QColor("#a78bfa"))
+            self.table.setItem(row, 0, id_item)
+            
+            # Date (Simple formatting)
+            date_str = item['uploaded_at'].split('T')[0] + ' ' + item['uploaded_at'].split('T')[1][:5]
+            self.table.setItem(row, 1, QTableWidgetItem(date_str))
+            
+            # Filename
+            self.table.setItem(row, 2, QTableWidgetItem(item.get('filename', 'Unknown')))
+            
+            # Records
+            self.table.setItem(row, 3, QTableWidgetItem(str(item.get('total_records', 0))))
+            
+            # Avg Flow
+            flow = item.get('avg_flowrate')
+            self.table.setItem(row, 4, QTableWidgetItem(f"{flow:.2f}" if flow else "-"))
+            
+            # Avg Pressure
+            press = item.get('avg_pressure')
+            self.table.setItem(row, 5, QTableWidgetItem(f"{press:.2f}" if press else "-"))
+
+
+# =============================================================================
 # MAIN WINDOW
 # =============================================================================
 
@@ -1037,6 +1133,10 @@ class MainWindow(QMainWindow):
         self.table = self.create_data_table()
         data_layout.addWidget(self.table)
         self.tabs.addTab(data_tab, "📊  Data Table")
+        
+        # History tab
+        self.history_tab = HistoryTab(self.api_client)
+        self.tabs.addTab(self.history_tab, "📜  History")
         
         # Visuals tab - Now with TWO charts
         visuals_tab = QWidget()
@@ -1199,7 +1299,11 @@ class MainWindow(QMainWindow):
         # Update charts (both bar and scatter)
         self.type_distribution = data.get('type_distribution', {})
         self.bar_chart.plot(self.type_distribution)
+        self.bar_chart.plot(self.type_distribution)
         self.scatter_chart.plot(self.equipment_data)
+        
+        # Refresh history
+        self.history_tab.refresh_history()
     
     def update_table(self):
         self.table.setRowCount(len(self.equipment_data))
